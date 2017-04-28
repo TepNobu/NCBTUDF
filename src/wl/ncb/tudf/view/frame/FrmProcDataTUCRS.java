@@ -12,7 +12,12 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 
 import java.awt.Paint;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
@@ -36,10 +41,10 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 
 import java.awt.event.ActionListener;
+import java.io.PrintWriter;
 import java.awt.event.ActionEvent;
 
 public class FrmProcDataTUCRS extends JInternalFrame {
-	private JTextField txtAsofDate;
 	static Logger log = Logger.getLogger(FrmProcDataTUCRS.class.getName());
 	ConnDB conndb;
 	private ConnectOracle10g connoracle10g;
@@ -172,7 +177,7 @@ public class FrmProcDataTUCRS extends JInternalFrame {
 				lblAsofdate.setBounds(309, 83, 104, 25);
 				panel_2.add(lblAsofdate);
 				
-				txtAsofDate = new JTextField();
+				JTextField txtAsofDate = new JTextField();
 				txtAsofDate.setFont(new Font("Tahoma", Font.BOLD, 16));
 				txtAsofDate.setBounds(425, 83, 116, 30);
 				panel_2.add(txtAsofDate);
@@ -195,7 +200,9 @@ public class FrmProcDataTUCRS extends JInternalFrame {
 								 Thread pc = new Thread(() -> {
 									 System.out.println("Processing..");
 										lblProcess.setText("กำลังประมวลผล..");
+										CALL_PROC_DATATUCRS(txtAsofDate.getText(),pUserName);
 								          //genTextFileNCB(txtAsOfDate.getText());
+										
 								   
 								  lblProcess.setText("ประมวลผลเสร็จสิ้นแล้ว !");
 								  dialog.dispose();						
@@ -311,6 +318,51 @@ public class FrmProcDataTUCRS extends JInternalFrame {
 		}
 
 		return verifyConnDB;
+	}
+	
+	private void CALL_PROC_DATATUCRS(String pAsOfMonth,String pUserName) {
+		
+		//  final SwingProgressBarExample it = new SwingProgressBarExample();
+
+		
+
+		 CallableStatement cs = null;
+	        try {
+	            cs = conn.prepareCall("{call PROC_DATATUCRS(?,?,?)}");
+	            cs.registerOutParameter(1, Types.VARCHAR);
+	            cs.setString(2, pAsOfMonth);//yyyymm
+	            cs.setString(3, pUserName);
+	            cs.execute();
+	            String str = cs.getString(1);
+	            if (str != null) {
+	                System.out.println(str);
+	            }
+	            else {
+	            	
+	            	System.out.println("COMPLETED !!!");
+	            }
+	        } catch (SQLException e) {
+	            System.err.println("SQLException: " + e.getMessage());
+	        }
+	        finally {
+	            if (cs != null) {
+	                try {
+	                    cs.close();
+	                } catch (SQLException e) {
+	                    System.err.println("SQLException: " + e.getMessage());
+	                }
+	            }
+	            if (conn != null) {
+	                //conn.close();
+					try {
+						connoracle10g.closeConnorcl10g(conn);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	            }
+	        }
+
 	}
 
 }
